@@ -93,8 +93,10 @@ Localisation :
   - middleware after_request
 
 Commandes de validation :
+```
 curl -i http://localhost:5001/health
 docker compose -f compose.staging.yml logs --no-log-prefix catalog | tail -n 10
+```
 
 Test de propagation du Request-Id :
 curl -i -H "X-Request-Id: test-123" http://localhost:5001/health
@@ -109,11 +111,13 @@ Localisation :
 - monitoring/traffic.sh
 
 Commande de validation :
+```
 BASE_URL=http://localhost:5001 bash monitoring/traffic.sh
-
+```
 Mode trafic suspect :
+```
 BASE_URL=http://localhost:5001 SUSPECT_MODE=1 bash monitoring/traffic.sh
-
+```
 
 5.4 Extraction et calcul des métriques runtime
 
@@ -131,12 +135,13 @@ Localisation :
 - monitoring/log_metrics.py
 
 Commandes de validation :
+```
 mkdir -p reports
 docker compose -f compose.staging.yml logs --no-log-prefix --since 2m catalog > reports/catalog_logs.raw
 grep -E '^\{' reports/catalog_logs.raw > reports/catalog_logs.jsonl
 python3 monitoring/log_metrics.py reports/catalog_logs.jsonl reports/log_report.json
 cat reports/log_report.json
-
+```
 
 5.5 Runtime security gate
 
@@ -154,8 +159,9 @@ Localisation :
 - monitoring/log_gate.sh
 
 Commande de validation (cas nominal) :
+```
 BASE_URL=http://localhost:5001 SERVICE=catalog bash monitoring/log_gate.sh
-
+```
 Résultat attendu :
 [gate] OK
 
@@ -167,8 +173,9 @@ Montrer que la gate bloque effectivement en cas de
 comportement suspect détecté.
 
 Commande :
+```
 BASE_URL=http://localhost:5001 SUSPECT_MODE=1 SERVICE=catalog bash monitoring/log_gate.sh
-
+```
 Résultat attendu :
 [gate] FAIL
 
