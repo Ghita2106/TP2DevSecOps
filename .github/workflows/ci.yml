@@ -1,0 +1,48 @@
+name: tp2-runtime-gate
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  runtime_gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy staging
+        run: |
+          docker compose -f docker-compose.staging.yml up -d --build
+
+      - name: Check /health
+        run: |
+          curl -sSf http://localhost:5000/health
+
+      - name: Generate traffic (make it fail on purpose)
+        run: |
+          chmod +x monitoring/traffic.sh
+          BASE_URL=http://localhost:5000 N=40 MODE=error bash monitoring/traffic.sh
+          BASE_URL=http://localhost:5000 N=20 MODE=slow bash monitoring/traffic.sh
+          BASE_URL=http://localhost:5000 N=10 MODE=suspect bash monitoring/traffic.sh
+
+      - name: Runtime log gate
+        run: |
+          chmod +x monitoring/log_gate.sh
+          COMPOSE_FILE=docker-compose.staging.yml SERVICE=web \
+          MAX_5XX_RATE=0.05 MAX_P95_MS=800 MAX_SUSPECT=0 \
+          bash monitoring/log_gate.sh
+
+      - name: Upload runtime gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-gate
+          path: |
+            runtime-logs.txt
+            runtime-gate-report.json
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f docker-compose.staging.yml down -v
