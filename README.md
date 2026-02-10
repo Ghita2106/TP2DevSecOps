@@ -1,10 +1,8 @@
-
 TP2 DEVSECOPS
 RUNTIME SUPERVISION & SECURITY GATE
-===============
+
 
 1. PRÉSENTATION GÉNÉRALE
----------------
 
 Ce projet a été réalisé dans le cadre du TP2 DevSecOps.
 Il met en œuvre une approche de sécurité post-déploiement
@@ -16,7 +14,6 @@ mise en place d’une chaîne DevSecOps cohérente et automatisée.
 
 
 2. OBJECTIFS DU TRAVAIL
----------------
 
 - Déployer une application web en environnement de staging
 - Produire des logs applicatifs structurés (JSON)
@@ -27,7 +24,6 @@ mise en place d’une chaîne DevSecOps cohérente et automatisée.
 
 
 3. ARCHITECTURE TECHNIQUE
----------------
 
 - Microservice Flask : catalog
 - Conteneurisation : Docker
@@ -37,8 +33,6 @@ mise en place d’une chaîne DevSecOps cohérente et automatisée.
 
 
 4. ORGANISATION DU PROJET
----------------
-
 ```
 .
 ├── compose.staging.yml
@@ -56,9 +50,7 @@ mise en place d’une chaîne DevSecOps cohérente et automatisée.
 └── reports/
 ```
 
-
 5. VALIDATION DES EXIGENCES DU TP
----------------
 
 5.1 Mise en service du staging
 
@@ -94,13 +86,14 @@ Localisation :
 
 Commandes de validation :
 ```
-curl -i http://localhost:5001/health
-docker compose -f compose.staging.yml logs --no-log-prefix catalog | tail -n 10
+curl.exe -i http://localhost:5001/health
+docker compose -f compose.staging.yml logs --no-log-prefix catalog | Select-Object -Last 10
 ```
 
 Test de propagation du Request-Id :
-curl -i -H "X-Request-Id: test-123" http://localhost:5001/health
-
+```
+curl.exe -i -H "X-Request-Id: test-123" http://localhost:5001/health
+```
 
 5.3 Génération de trafic applicatif
 
@@ -114,6 +107,7 @@ Commande de validation :
 ```
 BASE_URL=http://localhost:5001 bash monitoring/traffic.sh
 ```
+
 Mode trafic suspect :
 ```
 BASE_URL=http://localhost:5001 SUSPECT_MODE=1 bash monitoring/traffic.sh
@@ -138,10 +132,11 @@ Commandes de validation :
 ```
 mkdir -p reports
 docker compose -f compose.staging.yml logs --no-log-prefix --since 2m catalog > reports/catalog_logs.raw
-grep -E '^\{' reports/catalog_logs.raw > reports/catalog_logs.jsonl
+Select-String "^\{" reports/catalog_logs.raw | ForEach-Object { $_.Line } > reports/catalog_logs.jsonl
 python3 monitoring/log_metrics.py reports/catalog_logs.jsonl reports/log_report.json
-cat reports/log_report.json
+Get-Content reports/log_report.json
 ```
+
 
 5.5 Runtime security gate
 
@@ -162,6 +157,7 @@ Commande de validation (cas nominal) :
 ```
 BASE_URL=http://localhost:5001 SERVICE=catalog bash monitoring/log_gate.sh
 ```
+
 Résultat attendu :
 [gate] OK
 
@@ -176,12 +172,12 @@ Commande :
 ```
 BASE_URL=http://localhost:5001 SUSPECT_MODE=1 SERVICE=catalog bash monitoring/log_gate.sh
 ```
+
 Résultat attendu :
 [gate] FAIL
 
 
 6. APPORT DEVSECOPS
----------------
 
 Ce travail illustre :
 - l’intégration de la sécurité après le déploiement
@@ -191,5 +187,3 @@ Ce travail illustre :
 
 
 FIN DU DOCUMENT
-
-
