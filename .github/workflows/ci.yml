@@ -20,7 +20,7 @@ jobs:
           curl -sSf http://localhost:5000/health
 
       - name: Generate traffic (normal only)
-      run: |
+        run: |
           chmod +x monitoring/traffic.sh
           BASE_URL=http://localhost:5000 N=80 MODE=ok bash monitoring/traffic.sh
 
