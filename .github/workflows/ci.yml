@@ -2,7 +2,7 @@ name: tp2-runtime-gate
 
 on:
   push:
-    branches: ["main"]
+    branches: ["test_ghita"]
   workflow_dispatch:
 
 jobs:
