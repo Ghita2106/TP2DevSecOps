@@ -1,41 +1,45 @@
-LETTERBOX / TP2 DEVSECOPS – RUNTIME GATE (STAGING)
 
-============================================================
-CONTEXTE
-============================================================
-Ce projet est une base minimale réalisée dans le cadre du TP2 DevSecOps.
-L’objectif est de compléter un pipeline DevSecOps existant par un contrôle
-post-déploiement (staging) basé sur l’analyse de logs applicatifs structurés.
+TP2 DEVSECOPS
+RUNTIME SUPERVISION & SECURITY GATE
+===============
 
-Le pipeline ne se contente plus de builder et déployer : il observe le
-comportement réel de l’application après déploiement et bloque si des
-seuils sont dépassés.
+1. PRÉSENTATION GÉNÉRALE
+---------------
 
-============================================================
-OBJECTIFS DU TP
-============================================================
-- Déployer une application web simple en environnement staging
-- Générer des logs applicatifs structurés (JSON)
-- Générer du trafic applicatif reproductible
-- Extraire des métriques runtime à partir des logs
-- Mettre en place une runtime gate automatique :
-  - trop d’erreurs HTTP 5xx
-  - latence p95 trop élevée
-  - patterns suspects dans les requêtes
+Ce projet a été réalisé dans le cadre du TP2 DevSecOps.
+Il met en œuvre une approche de sécurité post-déploiement
+basée sur l’observation du comportement réel de l’application
+en environnement de staging.
 
-============================================================
-ARCHITECTURE TECHNIQUE
-============================================================
-- Application : Flask (microservice "catalog")
+L’objectif n’est pas la complexité fonctionnelle, mais la
+mise en place d’une chaîne DevSecOps cohérente et automatisée.
+
+
+2. OBJECTIFS DU TRAVAIL
+---------------
+
+- Déployer une application web en environnement de staging
+- Produire des logs applicatifs structurés (JSON)
+- Générer du trafic reproductible
+- Extraire des métriques runtime
+- Mettre en place une gate de sécurité automatisée
+- Bloquer le pipeline en cas de dérive détectée
+
+
+3. ARCHITECTURE TECHNIQUE
+---------------
+
+- Microservice Flask : catalog
 - Conteneurisation : Docker
 - Orchestration locale : Docker Compose
-- Langages :
-  - Python (application + calcul métriques)
-  - Bash (scripts de supervision)
+- Supervision et automatisation : scripts Bash
+- Analyse des logs : Python
 
-============================================================
-STRUCTURE DU PROJET
-============================================================
+
+4. ORGANISATION DU PROJET
+---------------
+
+```
 .
 ├── compose.staging.yml
 ├── services/
@@ -50,121 +54,133 @@ STRUCTURE DU PROJET
 │   ├── log_metrics.py
 │   └── log_gate.sh
 └── reports/
+```
 
-============================================================
-DESCRIPTION DU SERVICE CATALOG
-============================================================
-Endpoints exposés :
-- GET /health
-  - Vérifie que le service est opérationnel
-  - Retourne HTTP 200
 
-- GET /search?q=xxx
-  - Endpoint applicatif simple pour générer du trafic
-  - Retourne un JSON fictif
+5. VALIDATION DES EXIGENCES DU TP
+---------------
 
-Chaque requête génère :
-- un Request-Id (fourni ou généré)
-- une ligne de log JSON (1 requête = 1 ligne)
+5.1 Mise en service du staging
 
-============================================================
-FORMAT DES LOGS JSON
-============================================================
-Chaque requête produit une ligne JSON avec au minimum :
-- ts              : timestamp UTC
-- level           : niveau de log
-- service         : nom du service
-- request_id      : identifiant de requête
-- method          : méthode HTTP
-- path            : chemin appelé
-- status          : code HTTP
-- latency_ms      : latence en millisecondes
-- query           : query string (tronquée)
+Objectif :
+Vérifier que l’environnement de staging est opérationnel et
+que le service web est accessible.
 
-============================================================
-SCRIPTS DE MONITORING
-============================================================
+Localisation :
+- compose.staging.yml
+- services/catalog/app.py (endpoint /health)
 
-smoke.sh
-- Vérifie que /health est accessible
-- Échoue si le service ne répond pas
-
-supervision.sh
-- Vérifie la propagation du header X-Request-Id
-- Assure la traçabilité des requêtes
-
-traffic.sh
-- Génère du trafic normal sur /health et /search
-- Mode suspect optionnel (SUSPECT_MODE=1) :
-  - génère des patterns ../ et cmd=
-
-log_metrics.py
-- Analyse un fichier de logs JSONL
-- Calcule :
-  - nombre de logs
-  - nombre de réponses HTTP 5xx
-  - latence p95
-  - détection de patterns simples
-
-log_gate.sh
-- Orchestration complète de la runtime gate :
-  1. smoke tests
-  2. supervision
-  3. génération de trafic
-  4. extraction des logs Docker
-  5. calcul des métriques
-  6. comparaison aux seuils
-  7. succès ou échec du pipeline
-
-============================================================
-SEUILS DE SÉCURITÉ (PAR DÉFAUT)
-============================================================
-- MAX_5XX       = 0
-- MAX_P95_MS    = 400 ms
-- MAX_TRAV      = 0 (path traversal)
-
-Si un seuil est dépassé, la gate retourne un code d’erreur.
-
-============================================================
-LANCEMENT DU PROJET
-============================================================
-
-1. Build et déploiement du staging
---------------------------------
+Commandes de validation :
 docker compose -f compose.staging.yml down -v
 docker compose -f compose.staging.yml up -d --build
+curl -i http://localhost:5001/health
 
-2. Vérification du service
---------------------------
-curl http://localhost:5001/health
+Résultat attendu :
+- HTTP 200
+- réponse simple « OK »
 
-3. Lancer la runtime gate
--------------------------
+
+5.2 Production de logs structurés et Request-Id
+
+Objectif :
+Garantir la traçabilité et l’analyse automatique des requêtes.
+
+Localisation :
+- services/catalog/app.py
+  - middleware before_request
+  - middleware after_request
+
+Commandes de validation :
+curl -i http://localhost:5001/health
+docker compose -f compose.staging.yml logs --no-log-prefix catalog | tail -n 10
+
+Test de propagation du Request-Id :
+curl -i -H "X-Request-Id: test-123" http://localhost:5001/health
+
+
+5.3 Génération de trafic applicatif
+
+Objectif :
+Créer un trafic reproductible afin d’alimenter les logs.
+
+Localisation :
+- monitoring/traffic.sh
+
+Commande de validation :
+BASE_URL=http://localhost:5001 bash monitoring/traffic.sh
+
+Mode trafic suspect :
+BASE_URL=http://localhost:5001 SUSPECT_MODE=1 bash monitoring/traffic.sh
+
+
+5.4 Extraction et calcul des métriques runtime
+
+Objectif :
+Analyser les logs afin de calculer des indicateurs de santé
+et de sécurité de l’application.
+
+Métriques calculées :
+- nombre de requêtes
+- erreurs HTTP 5xx
+- latence p95
+- détection de patterns suspects
+
+Localisation :
+- monitoring/log_metrics.py
+
+Commandes de validation :
+mkdir -p reports
+docker compose -f compose.staging.yml logs --no-log-prefix --since 2m catalog > reports/catalog_logs.raw
+grep -E '^\{' reports/catalog_logs.raw > reports/catalog_logs.jsonl
+python3 monitoring/log_metrics.py reports/catalog_logs.jsonl reports/log_report.json
+cat reports/log_report.json
+
+
+5.5 Runtime security gate
+
+Objectif :
+Automatiser une décision de sécurité post-déploiement.
+
+Fonctionnement :
+- exécution des tests
+- génération de trafic
+- collecte et analyse des logs
+- comparaison aux seuils définis
+- validation ou échec du pipeline
+
+Localisation :
+- monitoring/log_gate.sh
+
+Commande de validation (cas nominal) :
 BASE_URL=http://localhost:5001 SERVICE=catalog bash monitoring/log_gate.sh
 
 Résultat attendu :
 [gate] OK
 
-============================================================
-TEST D’ÉCHEC VOLONTAIRE
-============================================================
-Pour vérifier que la gate fonctionne réellement :
 
-BASE_URL=http://localhost:5001 SUSPECT_MODE=1 bash monitoring/traffic.sh
-BASE_URL=http://localhost:5001 SERVICE=catalog bash monitoring/log_gate.sh
+5.6 Démonstration d’un échec contrôlé
+
+Objectif :
+Montrer que la gate bloque effectivement en cas de
+comportement suspect détecté.
+
+Commande :
+BASE_URL=http://localhost:5001 SUSPECT_MODE=1 SERVICE=catalog bash monitoring/log_gate.sh
 
 Résultat attendu :
 [gate] FAIL
 
-============================================================
-INTÉRÊT DEVSECOPS
-============================================================
-Ce TP illustre :
-- le principe de sécurité runtime
-- la complémentarité avec les scans statiques (SAST/SCA)
-- l’automatisation de décisions de sécurité dans un pipeline CI/CD
-- l’approche "security as code"
 
-============================================================
-FIN
-============================================================
+6. APPORT DEVSECOPS
+---------------
+
+Ce travail illustre :
+- l’intégration de la sécurité après le déploiement
+- l’analyse comportementale en environnement de staging
+- l’automatisation de contrôles de sécurité
+- le principe de « security as code »
+
+
+FIN DU DOCUMENT
+
+
