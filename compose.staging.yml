@@ -1,5 +1,5 @@
 services:
-  web:
-    build: ./app
+  catalog:
+    build: ./services/catalog
     ports:
       - "5001:5000"
