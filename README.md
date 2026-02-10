@@ -71,9 +71,11 @@ Localisation :
 - services/catalog/app.py (endpoint /health)
 
 Commandes de validation :
+```
 docker compose -f compose.staging.yml down -v
 docker compose -f compose.staging.yml up -d --build
-curl -i http://localhost:5001/health
+curl.exe -i http://localhost:5001/health
+```
 
 Résultat attendu :
 - HTTP 200
