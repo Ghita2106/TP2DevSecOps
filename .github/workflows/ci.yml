@@ -13,11 +13,11 @@ jobs:
 
       - name: Deploy staging
         run: |
-          docker compose -f docker-compose.staging.yml up -d --build
+           docker compose -f compose.staging.yml up -d --build
 
       - name: Check /health
         run: |
-          curl -sSf http://localhost:5000/health
+          curl -sSf http://localhost:5001/health
 
       - name: Generate traffic (normal only)
         run: |
@@ -25,12 +25,20 @@ jobs:
           BASE_URL=http://localhost:5000 N=80 MODE=ok bash monitoring/traffic.sh
 
 
+      - name: Generate traffic
+        run: |
+          chmod +x monitoring/traffic.sh
+          BASE_URL=http://localhost:5001 N=80 MODE=ok bash monitoring/traffic.sh
+
+
+
       - name: Runtime log gate
         run: |
           chmod +x monitoring/log_gate.sh
-          COMPOSE_FILE=docker-compose.staging.yml SERVICE=web \
+          COMPOSE_FILE=compose.staging.yml SERVICE=web \
           MAX_5XX_RATE=0.05 MAX_P95_MS=800 MAX_SUSPECT=0 \
           bash monitoring/log_gate.sh
+
 
       - name: Upload runtime gate artifacts
         if: always()
