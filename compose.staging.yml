@@ -1,0 +1,7 @@
+services:
+  catalog:
+    build:
+      context: ./services/catalog
+    container_name: catalog
+    ports:
+      - "5001:5000"
