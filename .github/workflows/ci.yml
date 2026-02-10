@@ -19,12 +19,11 @@ jobs:
         run: |
           curl -sSf http://localhost:5000/health
 
-      - name: Generate traffic (make it fail on purpose)
-        run: |
+      - name: Generate traffic (normal only)
+      run: |
           chmod +x monitoring/traffic.sh
-          BASE_URL=http://localhost:5000 N=40 MODE=error bash monitoring/traffic.sh
-          BASE_URL=http://localhost:5000 N=20 MODE=slow bash monitoring/traffic.sh
-          BASE_URL=http://localhost:5000 N=10 MODE=suspect bash monitoring/traffic.sh
+          BASE_URL=http://localhost:5000 N=80 MODE=ok bash monitoring/traffic.sh
+
 
       - name: Runtime log gate
         run: |
