@@ -31,12 +31,12 @@ if [ ! -s "reports/${SERVICE}_logs.jsonl" ]; then
 fi
 
 echo "[gate] 4) compute metrics"
-python monitoring/log_metrics.py "reports/${SERVICE}_logs.jsonl" "reports/log_report.json"
+python3 monitoring/log_metrics.py "reports/${SERVICE}_logs.jsonl" "reports/log_report.json"
 
 echo "[gate] 5) enforce thresholds"
-COUNT_5XX="$(python -c 'import json;print(json.load(open("reports/log_report.json"))["count_5xx"])')"
-P95="$(python -c 'import json;print(json.load(open("reports/log_report.json"))["p95_latency_ms"])')"
-TRAV="$(python -c 'import json;print(json.load(open("reports/log_report.json"))["patterns"]["path_traversal_hits"])')"
+COUNT_5XX="$(python3 -c 'import json;print(json.load(open("reports/log_report.json"))["count_5xx"])')"
+P95="$(python3 -c 'import json;print(json.load(open("reports/log_report.json"))["p95_latency_ms"])')"
+TRAV="$(python3 -c 'import json;print(json.load(open("reports/log_report.json"))["patterns"]["path_traversal_hits"])')"
 
 echo "[gate] thresholds: 5xx<=${MAX_5XX} p95<=${MAX_P95_MS}ms trav<=${MAX_TRAV}"
 echo "[gate] observed: 5xx=${COUNT_5XX} p95=${P95}ms trav=${TRAV}"
