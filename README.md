@@ -105,12 +105,15 @@ Localisation :
 
 Commande de validation :
 ```
-BASE_URL=http://localhost:5001 bash monitoring/traffic.sh
+$env:BASE_URL="http://localhost:5001"
+bash monitoring/traffic.sh
 ```
 
 Mode trafic suspect :
 ```
-BASE_URL=http://localhost:5001 SUSPECT_MODE=1 bash monitoring/traffic.sh
+$env:BASE_URL="http://localhost:5001"
+$env:SUSPECT_MODE="1"
+bash monitoring/traffic.sh
 ```
 
 5.4 Extraction et calcul des métriques runtime
@@ -130,7 +133,7 @@ Localisation :
 
 Commandes de validation :
 ```
-mkdir -p reports
+mkdir reports
 docker compose -f compose.staging.yml logs --no-log-prefix --since 2m catalog > reports/catalog_logs.raw
 Select-String "^\{" reports/catalog_logs.raw | ForEach-Object { $_.Line } > reports/catalog_logs.jsonl
 python3 monitoring/log_metrics.py reports/catalog_logs.jsonl reports/log_report.json
@@ -155,7 +158,9 @@ Localisation :
 
 Commande de validation (cas nominal) :
 ```
-BASE_URL=http://localhost:5001 SERVICE=catalog bash monitoring/log_gate.sh
+$env:BASE_URL="http://localhost:5001"
+$env:SERVICE="catalog"
+bash monitoring/log_gate.sh
 ```
 
 Résultat attendu :
@@ -170,7 +175,10 @@ comportement suspect détecté.
 
 Commande :
 ```
-BASE_URL=http://localhost:5001 SUSPECT_MODE=1 SERVICE=catalog bash monitoring/log_gate.sh
+$env:BASE_URL="http://localhost:5001"
+$env:SUSPECT_MODE="1"
+$env:SERVICE="catalog"
+bash monitoring/log_gate.sh
 ```
 
 Résultat attendu :
